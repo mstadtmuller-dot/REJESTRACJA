@@ -2,65 +2,38 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Skaner QR FIX</title>
-
-  <!-- ZMIENIONE CDN (stabilniejsze) -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
-
-  <style>
-    body { font-family: Arial; text-align: center; }
-    #reader { width: 300px; margin: auto; }
-    #result { margin-top: 15px; font-size: 18px; }
-    button { padding: 10px 15px; }
-  </style>
+  <title>KAMERA OK</title>
 </head>
 
 <body>
 
-<h2>SKANER QR</h2>
+<h2>KAMERA TEST</h2>
 
-<button onclick="startScanner()">START</button>
+<button onclick="start()">START</button>
 
-<div id="reader"></div>
-<div id="result">Czekam...</div>
+<video id="v" autoplay playsinline style="width:300px;"></video>
+
+<p id="status">czekam...</p>
 
 <script>
 
-const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
+async function start() {
 
-function onScanSuccess(decodedText) {
+  try {
 
-  document.getElementById("result").innerText = "Sprawdzanie...";
-
-  fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
-    .then(res => res.text())
-    .then(text => {
-      document.getElementById("result").innerText = text;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
     });
 
-}
+    document.getElementById("v").srcObject = stream;
 
-function startScanner() {
+    document.getElementById("status").innerText = "kamera działa ✔";
 
-  if (typeof Html5Qrcode === "undefined") {
-    document.getElementById("result").innerText =
-      "BŁĄD: biblioteka nie załadowana";
-    return;
+  } catch (e) {
+
+    document.getElementById("status").innerText = e.name + ": " + e.message;
+
   }
-
-  const scanner = new Html5Qrcode("reader");
-
-  Html5Qrcode.getCameras().then(devices => {
-
-    scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      onScanSuccess
-    );
-
-  }).catch(err => {
-    document.getElementById("result").innerText = err;
-  });
 
 }
 
