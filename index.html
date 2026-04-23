@@ -2,64 +2,48 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Skaner QR</title>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js"></script>
-
+  <title>TEST KAMERY</title>
   <style>
     body { font-family: Arial; text-align: center; }
-    #reader { width: 300px; margin: auto; }
-    #result { margin-top: 15px; font-size: 18px; }
-    button { padding: 10px 15px; font-size: 16px; }
+    video { width: 320px; margin-top: 10px; }
+    #status { margin-top: 15px; font-weight: bold; }
   </style>
 </head>
 
 <body>
 
-<h2>Skaner QR</h2>
+<h2>TEST KAMERY</h2>
 
-<button id="startBtn">▶ Start kamery</button>
+<button id="start">Start kamery</button>
 
-<div id="reader"></div>
-<div id="result">Kliknij Start</div>
+<div id="status">Czekam...</div>
+<video id="video" autoplay playsinline></video>
 
 <script>
 
-const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
+document.getElementById("start").addEventListener("click", async () => {
 
-let scanner;
+  const status = document.getElementById("status");
+  const video = document.getElementById("video");
 
-document.getElementById("startBtn").addEventListener("click", startScanner);
+  try {
 
-function onScanSuccess(decodedText) {
+    status.innerText = "Uruchamianie...";
 
-  document.getElementById("result").innerText = "Sprawdzanie...";
-
-  fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
-    .then(res => res.text())
-    .then(text => {
-      document.getElementById("result").innerText = text;
-    })
-    .catch(() => {
-      document.getElementById("result").innerText = "Błąd połączenia";
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+      audio: false
     });
-}
 
-function startScanner() {
+    video.srcObject = stream;
 
-  scanner = new Html5Qrcode("reader");
+    status.innerText = "KAMERA DZIAŁA ✔";
 
-  scanner.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    onScanSuccess
-  ).then(() => {
-    document.getElementById("result").innerText = "Kamera aktywna";
-  }).catch(err => {
-    document.getElementById("result").innerText = "Błąd kamery: " + err;
-  });
+  } catch (err) {
+    status.innerText = "BŁĄD: " + err.name + " - " + err.message;
+  }
 
-}
+});
 
 </script>
 
