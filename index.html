@@ -2,48 +2,78 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>TEST KAMERY</title>
+  <title>Check-in QR</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js"></script>
+
   <style>
     body { font-family: Arial; text-align: center; }
-    video { width: 320px; margin-top: 10px; }
-    #status { margin-top: 15px; font-weight: bold; }
+    #reader { width: 300px; margin: auto; }
+    #result { margin-top: 15px; font-size: 18px; font-weight: bold; }
+    button { padding: 10px 15px; font-size: 16px; margin-bottom: 10px; }
   </style>
 </head>
 
 <body>
 
-<h2>TEST KAMERY</h2>
+<h2>SKANER QR</h2>
 
-<button id="start">Start kamery</button>
+<button onclick="startScanner()">START SKANERA</button>
 
-<div id="status">Czekam...</div>
-<video id="video" autoplay playsinline></video>
+<div id="reader"></div>
+<div id="result">Czekam...</div>
 
 <script>
 
-document.getElementById("start").addEventListener("click", async () => {
+const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
 
-  const status = document.getElementById("status");
-  const video = document.getElementById("video");
+let scanner;
 
-  try {
+function onScanSuccess(decodedText) {
 
-    status.innerText = "Uruchamianie...";
+  document.getElementById("result").innerText = "Sprawdzanie...";
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false
+  scanner.pause(); // ważne — żeby nie skanował 20x
+
+  fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
+    .then(res => res.text())
+    .then(text => {
+      document.getElementById("result").innerText = text;
+
+      setTimeout(() => {
+        scanner.resume();
+      }, 2000);
+
+    })
+    .catch(() => {
+      document.getElementById("result").innerText = "Błąd połączenia";
+      scanner.resume();
     });
+}
 
-    video.srcObject = stream;
+function startScanner() {
 
-    status.innerText = "KAMERA DZIAŁA ✔";
+  scanner = new Html5Qrcode("reader");
 
-  } catch (err) {
-    status.innerText = "BŁĄD: " + err.name + " - " + err.message;
-  }
+  Html5Qrcode.getCameras().then(devices => {
 
-});
+    if (devices && devices.length) {
+
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+      ).then(() => {
+        document.getElementById("result").innerText = "SKANER AKTYWNY";
+      });
+
+    } else {
+      document.getElementById("result").innerText = "Brak kamery";
+    }
+
+  });
+
+}
 
 </script>
 
