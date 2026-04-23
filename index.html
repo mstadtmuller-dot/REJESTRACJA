@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Skaner QR</title>
 
-  <!-- 📌 BIBLIOTEKA QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
@@ -17,27 +16,18 @@
       background: #f5f5f5;
     }
 
-    h2 {
-      margin-bottom: 10px;
-    }
-
     #reader {
       width: 300px;
       margin: auto;
       border: 2px solid #ddd;
       border-radius: 10px;
-      overflow: hidden;
       background: white;
     }
 
     .box {
       margin-top: 20px;
       font-size: 16px;
-      padding: 10px;
     }
-
-    .error { color: red; }
-    .ok { color: green; }
   </style>
 </head>
 
@@ -46,96 +36,61 @@
 <h2>📷 Skaner QR</h2>
 
 <div id="reader"></div>
-
 <div class="box" id="status">Czekam na skan...</div>
 
 <script>
 
-  // =========================
-  // 🔴 TWOJE USTAWIENIA
-  // =========================
+const API_URL = "https://script.google.com/macros/s/TWOJ_ID/exec"; 
+// ⛔ MUSI BYĆ /macros/s/..., nie /a/macros/
 
-  const API_URL = "https://script.google.com/a/macros/uw.edu.pl/s/AKfycbwEGXkMpsaG6zW_eR5fEZSTF2ds3DIGFuDli_Y8genzLPUEByof93F83J4GglEvk91A/exec";
+const REDIRECT_AFTER_SCAN = null;
 
-  const REDIRECT_AFTER_SCAN = "https://mstadtmuller-dot.github.io/REJESTRACJA/success.html";
+function onScanSuccess(decodedText) {
 
-  // =========================
+  document.getElementById("status").innerHTML =
+    "✅ Skan: " + decodedText;
 
-
-  function onScanSuccess(decodedText) {
-    console.log("QR:", decodedText);
-
-    document.getElementById("status").innerHTML =
-      "✅ Zeskanowano: " + decodedText;
-
-    // 📌 WYSYŁKA DO API (POPRAWIONA – BEZ CORS PROBLEMÓW)
-    fetch(API_URL + "?qr=" + encodeURIComponent(decodedText))
-      .then(res => res.text())
-      .then(data => {
-        document.getElementById("status").innerHTML =
-          "📡 Wysłano do serwera: " + data;
-
-        if (REDIRECT_AFTER_SCAN) {
-          setTimeout(() => {
-            window.location.href = REDIRECT_AFTER_SCAN;
-          }, 800);
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById("status").innerHTML =
-          "❌ Błąd połączenia z API";
-      });
-  }
-
-
-  function onScanFailure(error) {
-    // ignorujemy błędy skanowania
-  }
-
-
-  const html5QrCode = new Html5Qrcode("reader");
-
-  Html5Qrcode.getCameras().then(devices => {
-
-    if (!devices || devices.length === 0) {
+  // 📌 POPRAWNE WYWOŁANIE API (GET)
+  fetch(API_URL + "?qr=" + encodeURIComponent(decodedText))
+    .then(res => res.text())
+    .then(data => {
       document.getElementById("status").innerHTML =
-        "❌ Brak kamery";
-      return;
-    }
+        "📡 Odpowiedź: " + data;
 
-    // 📌 wybór tylnej kamery (pewny sposób)
-    let cameraId = devices[0].id;
-
-    for (let i = 0; i < devices.length; i++) {
-      const label = (devices[i].label || "").toLowerCase();
-
-      if (
-        label.includes("back") ||
-        label.includes("rear") ||
-        label.includes("environment")
-      ) {
-        cameraId = devices[i].id;
+      if (REDIRECT_AFTER_SCAN) {
+        setTimeout(() => {
+          window.location.href = REDIRECT_AFTER_SCAN;
+        }, 800);
       }
-    }
-
-    html5QrCode.start(
-      cameraId,
-      {
-        fps: 10,
-        qrbox: 200
-      },
-      onScanSuccess,
-      onScanFailure
-    ).catch(err => {
+    })
+    .catch(err => {
+      console.error(err);
       document.getElementById("status").innerHTML =
-        "❌ Kamera błąd: " + err;
+        "❌ Błąd połączenia z API";
     });
+}
 
-  }).catch(err => {
-    document.getElementById("status").innerHTML =
-      "❌ Kamera niedostępna: " + err;
-  });
+// 📷 kamera (tylna)
+const html5QrCode = new Html5Qrcode("reader");
+
+Html5Qrcode.getCameras().then(devices => {
+
+  let cameraId = devices[0].id;
+
+  for (let d of devices) {
+    const label = (d.label || "").toLowerCase();
+    if (label.includes("back") || label.includes("rear")) {
+      cameraId = d.id;
+    }
+  }
+
+  html5QrCode.start(
+    cameraId,
+    { fps: 10, qrbox: 200 },
+    onScanSuccess
+  );
+
+});
 
 </script>
 
