@@ -2,76 +2,43 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>QR Check-in</title>
-
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
-
-  <style>
-    body { font-family: Arial; text-align: center; }
-    #reader { width: 300px; margin: auto; }
-    #result { margin-top: 15px; font-size: 18px; font-weight: bold; }
-    button { padding: 10px 15px; margin-bottom: 10px; }
-  </style>
+  <title>CAMERA TEST</title>
 </head>
 
 <body>
 
-<h2>SKANER QR</h2>
+<h2>TEST KAMERY</h2>
 
-<button onclick="startScanner()">START</button>
+<button onclick="start()">START KAMERY</button>
 
-<div id="reader"></div>
-<div id="result">Czekam...</div>
+<video id="video" autoplay playsinline style="width:300px;"></video>
+
+<p id="status">czekam...</p>
 
 <script>
 
-const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
+async function start() {
 
-let scanner;
+  const status = document.getElementById("status");
+  const video = document.getElementById("video");
 
-function onScanSuccess(decodedText) {
+  try {
 
-  document.getElementById("result").innerText = "Sprawdzanie...";
+    status.innerText = "start...";
 
-  // zatrzymaj skan żeby nie dublowało
-  scanner.pause(true);
-
-  fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
-    .then(res => res.text())
-    .then(text => {
-      document.getElementById("result").innerText = text;
-
-      setTimeout(() => {
-        scanner.resume();
-      }, 2000);
-
-    })
-    .catch(() => {
-      document.getElementById("result").innerText = "Błąd połączenia";
-      scanner.resume();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
     });
-}
 
-function startScanner() {
+    video.srcObject = stream;
 
-  scanner = new Html5Qrcode("reader");
+    status.innerText = "KAMERA DZIAŁA ✔";
 
-  const config = {
-    fps: 10,
-    qrbox: { width: 250, height: 250 }
-  };
+  } catch (e) {
 
-  scanner.start(
-    { facingMode: "environment" },
-    config,
-    onScanSuccess
-  )
-  .then(() => {
-    document.getElementById("result").innerText = "SKANER AKTYWNY";
-  })
-  .catch(err => {
-    document.getElementById("result").innerText = "BŁĄD: " + err;
-  });
+    status.innerText = "ERROR: " + e.name + " - " + e.message;
+
+  }
 
 }
 
