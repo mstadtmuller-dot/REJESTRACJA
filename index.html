@@ -3,42 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <title>Skaner QR</title>
-
-  <style>
-    body { font-family: Arial; text-align: center; }
-    video { width: 300px; margin-top: 10px; }
-    #result { margin-top: 20px; font-size: 18px; }
-  </style>
 </head>
 
 <body>
 
 <h2>Skaner QR</h2>
 
-<button onclick="startCamera()">▶ Start kamery</button>
+<button id="start">START KAMERY</button>
 
-<video id="video" autoplay></video>
-
-<div id="result">Czekam...</div>
+<div id="status">Kliknij START</div>
 
 <script>
 
-const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
+document.getElementById("start").addEventListener("click", async () => {
 
-function startCamera() {
+  const status = document.getElementById("status");
 
-  const video = document.getElementById('video');
+  try {
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => {
-      video.srcObject = stream;
-      document.getElementById("result").innerText = "Kamera działa (ale jeszcze bez skanera QR)";
-    })
-    .catch(err => {
-      document.getElementById("result").innerText = "Brak dostępu do kamery: " + err;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
     });
 
-}
+    status.innerText = "KAMERA DZIAŁA ✔";
+
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.autoplay = true;
+    document.body.appendChild(video);
+
+  } catch (err) {
+    status.innerText = "BŁĄD: " + err;
+  }
+
+});
 
 </script>
 
