@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>QR CHECK-IN</title>
+  <title>QR Check-in</title>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
 
@@ -10,14 +10,15 @@
     body { font-family: Arial; text-align: center; }
     #reader { width: 300px; margin: auto; }
     #result { margin-top: 15px; font-size: 18px; font-weight: bold; }
+    button { padding: 10px 15px; margin-bottom: 10px; }
   </style>
 </head>
 
 <body>
 
-<h2>CHECK-IN QR</h2>
+<h2>SKANER QR</h2>
 
-<button onclick="start()">START SKANERA</button>
+<button onclick="startScanner()">START</button>
 
 <div id="reader"></div>
 <div id="result">Czekam...</div>
@@ -26,34 +27,50 @@
 
 const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
 
+let scanner;
+
 function onScanSuccess(decodedText) {
 
   document.getElementById("result").innerText = "Sprawdzanie...";
+
+  // zatrzymaj skan żeby nie dublowało
+  scanner.pause(true);
 
   fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
     .then(res => res.text())
     .then(text => {
       document.getElementById("result").innerText = text;
+
+      setTimeout(() => {
+        scanner.resume();
+      }, 2000);
+
     })
     .catch(() => {
       document.getElementById("result").innerText = "Błąd połączenia";
+      scanner.resume();
     });
 }
 
-function start() {
+function startScanner() {
 
-  const scanner = new Html5Qrcode("reader");
+  scanner = new Html5Qrcode("reader");
 
-  Html5Qrcode.getCameras().then(() => {
+  const config = {
+    fps: 10,
+    qrbox: { width: 250, height: 250 }
+  };
 
-    scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      onScanSuccess
-    ).catch(err => {
-      document.getElementById("result").innerText = err;
-    });
-
+  scanner.start(
+    { facingMode: "environment" },
+    config,
+    onScanSuccess
+  )
+  .then(() => {
+    document.getElementById("result").innerText = "SKANER AKTYWNY";
+  })
+  .catch(err => {
+    document.getElementById("result").innerText = "BŁĄD: " + err;
   });
 
 }
