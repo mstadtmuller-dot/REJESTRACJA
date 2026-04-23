@@ -2,70 +2,22 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>DEBUG SKANER</title>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js"></script>
-
-  <style>
-    body { font-family: Arial; text-align: center; }
-    #reader { width: 300px; margin: auto; }
-    #log { margin-top: 15px; font-size: 14px; color: red; }
-  </style>
+  <title>DEBUG CLICK</title>
 </head>
 
 <body>
 
-<h2>DEBUG SKANER QR</h2>
+<h2>TEST PRZYCISKU</h2>
 
-<button onclick="start()">START</button>
+<button onclick="test()">KLIKNIJ MNIE</button>
 
-<div id="reader"></div>
-<div id="log">Czekam...</div>
+<p id="out">czekam...</p>
 
 <script>
 
-const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
-
-function log(msg) {
-  document.getElementById("log").innerText = msg;
-  console.log(msg);
-}
-
-function onScanSuccess(decodedText) {
-  log("Zeskanowano: " + decodedText);
-}
-
-function start() {
-
-  try {
-
-    log("Tworzenie skanera...");
-
-    const qr = new Html5Qrcode("reader");
-
-    Html5Qrcode.getCameras()
-      .then(devices => {
-
-        log("Kamery: " + devices.length);
-
-        return qr.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          onScanSuccess
-        );
-
-      })
-      .then(() => {
-        log("SKANER DZIAŁA");
-      })
-      .catch(err => {
-        log("START ERROR: " + err);
-      });
-
-  } catch (e) {
-    log("FATAL: " + e.message);
-  }
-
+function test() {
+  document.getElementById("out").innerText = "JS DZIAŁA ✔";
+  alert("JS działa");
 }
 
 </script>
