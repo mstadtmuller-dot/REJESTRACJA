@@ -2,13 +2,16 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>QR CHECK-IN</title>
+  <title>QR Check-in</title>
+
+  <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
 
   <style>
     body { font-family: Arial; text-align: center; }
     video { width: 300px; margin-top: 10px; }
     canvas { display: none; }
     #result { margin-top: 15px; font-size: 18px; font-weight: bold; }
+    button { padding: 10px 15px; margin-bottom: 10px; }
   </style>
 </head>
 
@@ -31,31 +34,35 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-let stream;
+let scanning = false;
 
 async function start() {
 
   try {
 
-    stream = await navigator.mediaDevices.getUserMedia({
+    const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "environment" }
     });
 
     video.srcObject = stream;
 
-    requestAnimationFrame(scan);
+    scanning = true;
+
+    scanLoop();
 
     document.getElementById("result").innerText = "KAMERA OK";
 
   } catch (e) {
 
-    document.getElementById("result").innerText = "BŁĄD KAMERY";
+    document.getElementById("result").innerText = "BŁĄD KAMERY: " + e.message;
 
   }
 
 }
 
-function scan() {
+function scanLoop() {
+
+  if (!scanning) return;
 
   if (video.readyState === video.HAVE_ENOUGH_DATA) {
 
@@ -66,25 +73,33 @@ function scan() {
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    // PROSTY DETEKTOR (fallback: tylko test ruchu)
-    const avg = imageData.data[0] + imageData.data[1] + imageData.data[2];
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
 
-    if (avg > 0) {
-      detectFakeQR(imageData);
+    if (code) {
+
+      scanning = false;
+
+      handleQR(code.data);
+
+      return;
     }
   }
 
-  requestAnimationFrame(scan);
+  requestAnimationFrame(scanLoop);
 }
 
-// PROSTY FAKE DETECTOR (tymczasowy test działania pipeline)
-function detectFakeQR() {
+function handleQR(text) {
 
-  // symulacja - sprawdzamy czy pipeline działa
-  // (tu później podpinamy prawdziwy decoder)
+  document.getElementById("result").innerText = "Sprawdzanie...";
 
-  document.getElementById("result").innerText =
-    "KAMERA OK - brak dekodera QR";
+  fetch(API_URL + "?id=" + encodeURIComponent(text))
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById("result").innerText = data;
+    })
+    .catch(() => {
+      document.getElementById("result").innerText = "Błąd połączenia";
+    });
 
 }
 
