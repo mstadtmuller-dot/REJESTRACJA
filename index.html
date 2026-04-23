@@ -4,22 +4,13 @@
   <meta charset="UTF-8">
   <title>Skaner QR</title>
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js"></script>
 
   <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      margin-top: 20px;
-    }
-    #reader {
-      width: 300px;
-      margin: auto;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-    }
+    body { font-family: Arial; text-align: center; }
+    #reader { width: 300px; margin: auto; }
+    button { font-size: 18px; padding: 10px; margin-top: 20px; }
+    #result { margin-top: 20px; }
   </style>
 </head>
 
@@ -27,8 +18,10 @@
 
 <h2>Skaner QR</h2>
 
+<button onclick="startScanner()">▶ Start kamery</button>
+
 <div id="reader"></div>
-<div id="result">Czekam na skan...</div>
+<div id="result">Kliknij Start</div>
 
 <script>
 
@@ -42,26 +35,25 @@ function onScanSuccess(decodedText) {
     .then(res => res.text())
     .then(text => {
       document.getElementById("result").innerText = text;
-    })
-    .catch(err => {
-      document.getElementById("result").innerText = "Błąd połączenia";
     });
 }
 
 function startScanner() {
+
   const html5QrCode = new Html5Qrcode("reader");
 
   html5QrCode.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     onScanSuccess
-  ).catch(err => {
+  ).then(() => {
+    document.getElementById("result").innerText = "Kamera aktywna";
+  }).catch(err => {
     document.getElementById("result").innerText =
-      "Nie można uruchomić kamery: " + err;
+      "Błąd kamery: " + err;
   });
-}
 
-startScanner();
+}
 
 </script>
 
