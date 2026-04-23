@@ -2,42 +2,23 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Skaner QR - Check-in</title>
+  <title>Skaner QR</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js"></script>
 
   <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      margin: 0;
-      padding: 20px;
-    }
-
-    #reader {
-      width: 300px;
-      margin: auto;
-    }
-
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    button {
-      padding: 10px 15px;
-      font-size: 16px;
-      margin-bottom: 15px;
-    }
+    body { font-family: Arial; text-align: center; }
+    #reader { width: 300px; margin: auto; }
+    #result { margin-top: 15px; font-size: 18px; }
+    button { padding: 10px 15px; font-size: 16px; }
   </style>
 </head>
 
 <body>
 
-<h2>Skaner QR - Check-in</h2>
+<h2>Skaner QR</h2>
 
-<button onclick="startScanner()">▶ Start skanera</button>
+<button id="startBtn">▶ Start kamery</button>
 
 <div id="reader"></div>
 <div id="result">Kliknij Start</div>
@@ -48,6 +29,8 @@ const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
 
 let scanner;
 
+document.getElementById("startBtn").addEventListener("click", startScanner);
+
 function onScanSuccess(decodedText) {
 
   document.getElementById("result").innerText = "Sprawdzanie...";
@@ -57,8 +40,8 @@ function onScanSuccess(decodedText) {
     .then(text => {
       document.getElementById("result").innerText = text;
     })
-    .catch(err => {
-      document.getElementById("result").innerText = "Błąd połączenia: " + err;
+    .catch(() => {
+      document.getElementById("result").innerText = "Błąd połączenia";
     });
 }
 
@@ -71,7 +54,7 @@ function startScanner() {
     { fps: 10, qrbox: 250 },
     onScanSuccess
   ).then(() => {
-    document.getElementById("result").innerText = "Skaner aktywny";
+    document.getElementById("result").innerText = "Kamera aktywna";
   }).catch(err => {
     document.getElementById("result").innerText = "Błąd kamery: " + err;
   });
