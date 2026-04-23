@@ -27,49 +27,48 @@
 
 const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
 
-let scanner;
+let html5QrCode;
 
 function onScanSuccess(decodedText) {
 
   document.getElementById("result").innerText = "Sprawdzanie...";
 
-  scanner.pause(); // ważne — żeby nie skanował 20x
-
   fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
     .then(res => res.text())
     .then(text => {
       document.getElementById("result").innerText = text;
-
-      setTimeout(() => {
-        scanner.resume();
-      }, 2000);
-
     })
     .catch(() => {
       document.getElementById("result").innerText = "Błąd połączenia";
-      scanner.resume();
     });
 }
 
 function startScanner() {
 
-  scanner = new Html5Qrcode("reader");
+  html5QrCode = new Html5Qrcode("reader");
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 250, height: 250 },
+    aspectRatio: 1.0
+  };
 
   Html5Qrcode.getCameras().then(devices => {
 
-    if (devices && devices.length) {
-
-      scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        onScanSuccess
-      ).then(() => {
-        document.getElementById("result").innerText = "SKANER AKTYWNY";
-      });
-
-    } else {
+    if (!devices || devices.length === 0) {
       document.getElementById("result").innerText = "Brak kamery";
+      return;
     }
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      onScanSuccess
+    ).then(() => {
+      document.getElementById("result").innerText = "SKANER AKTYWNY";
+    }).catch(err => {
+      document.getElementById("result").innerText = "BŁĄD: " + err;
+    });
 
   });
 
