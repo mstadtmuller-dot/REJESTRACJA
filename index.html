@@ -4,13 +4,10 @@
   <meta charset="UTF-8">
   <title>Skaner QR</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js"></script>
-
   <style>
     body { font-family: Arial; text-align: center; }
-    #reader { width: 300px; margin: auto; }
-    button { font-size: 18px; padding: 10px; margin-top: 20px; }
-    #result { margin-top: 20px; }
+    video { width: 300px; margin-top: 10px; }
+    #result { margin-top: 20px; font-size: 18px; }
   </style>
 </head>
 
@@ -18,40 +15,28 @@
 
 <h2>Skaner QR</h2>
 
-<button onclick="startScanner()">▶ Start kamery</button>
+<button onclick="startCamera()">▶ Start kamery</button>
 
-<div id="reader"></div>
-<div id="result">Kliknij Start</div>
+<video id="video" autoplay></video>
+
+<div id="result">Czekam...</div>
 
 <script>
 
 const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
 
-function onScanSuccess(decodedText) {
+function startCamera() {
 
-  document.getElementById("result").innerText = "Sprawdzanie...";
+  const video = document.getElementById('video');
 
-  fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
-    .then(res => res.text())
-    .then(text => {
-      document.getElementById("result").innerText = text;
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      video.srcObject = stream;
+      document.getElementById("result").innerText = "Kamera działa (ale jeszcze bez skanera QR)";
+    })
+    .catch(err => {
+      document.getElementById("result").innerText = "Brak dostępu do kamery: " + err;
     });
-}
-
-function startScanner() {
-
-  const html5QrCode = new Html5Qrcode("reader");
-
-  html5QrCode.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    onScanSuccess
-  ).then(() => {
-    document.getElementById("result").innerText = "Kamera aktywna";
-  }).catch(err => {
-    document.getElementById("result").innerText =
-      "Błąd kamery: " + err;
-  });
 
 }
 
