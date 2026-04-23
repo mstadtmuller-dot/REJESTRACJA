@@ -68,39 +68,29 @@
     document.getElementById("status").innerHTML =
       "✅ Zeskanowano: " + decodedText;
 
-    // jeśli brak API → tylko pokaz
-    if (!API_URL || API_URL.includes("TUTAJ")) return;
+    // 📌 WYSYŁKA DO API (POPRAWIONA – BEZ CORS PROBLEMÓW)
+    fetch(API_URL + "?qr=" + encodeURIComponent(decodedText))
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("status").innerHTML =
+          "📡 Wysłano do serwera: " + data;
 
-    fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        qr: decodedText
+        if (REDIRECT_AFTER_SCAN) {
+          setTimeout(() => {
+            window.location.href = REDIRECT_AFTER_SCAN;
+          }, 800);
+        }
       })
-    })
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById("status").innerHTML =
-        "📡 Wysłano: " + data;
-
-      if (REDIRECT_AFTER_SCAN) {
-        setTimeout(() => {
-          window.location.href = REDIRECT_AFTER_SCAN;
-        }, 800);
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById("status").innerHTML =
-        "❌ Błąd połączenia z API";
-    });
+      .catch(err => {
+        console.error(err);
+        document.getElementById("status").innerHTML =
+          "❌ Błąd połączenia z API";
+      });
   }
 
 
   function onScanFailure(error) {
-    // ignorujemy (normalne w skanerze)
+    // ignorujemy błędy skanowania
   }
 
 
@@ -114,9 +104,23 @@
       return;
     }
 
-    // 📌 NAJLEPSZE ROZWIĄZANIE: tylnia kamera
+    // 📌 wybór tylnej kamery (pewny sposób)
+    let cameraId = devices[0].id;
+
+    for (let i = 0; i < devices.length; i++) {
+      const label = (devices[i].label || "").toLowerCase();
+
+      if (
+        label.includes("back") ||
+        label.includes("rear") ||
+        label.includes("environment")
+      ) {
+        cameraId = devices[i].id;
+      }
+    }
+
     html5QrCode.start(
-      { facingMode: "environment" },
+      cameraId,
       {
         fps: 10,
         qrbox: 200
