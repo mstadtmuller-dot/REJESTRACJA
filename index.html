@@ -3,40 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <title>Skaner QR</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js"></script>
+
+  <style>
+    body { font-family: Arial; text-align: center; }
+    #reader { width: 300px; margin: auto; }
+    #result { margin-top: 20px; font-size: 18px; }
+    button { padding: 10px; font-size: 16px; margin: 10px; }
+  </style>
 </head>
 
 <body>
 
 <h2>Skaner QR</h2>
 
-<button id="start">START KAMERY</button>
+<button onclick="startScanner()">▶ Start skanera</button>
 
-<div id="status">Kliknij START</div>
+<div id="reader"></div>
+<div id="result">Czekam...</div>
 
 <script>
 
-document.getElementById("start").addEventListener("click", async () => {
+const API_URL = "https://script.google.com/a/macros/uw.edu.pl/s/AKfycbz4tWLQbTqzZfP8KdeKOUrLLzor65yhd0HhkfW09Un7S04Xhozp0NoUEMEb_sVuSj-8/exec";
 
-  const status = document.getElementById("status");
+let scanner;
 
-  try {
+function onScanSuccess(decodedText) {
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" }
+  document.getElementById("result").innerText = "Sprawdzanie...";
+
+  fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
+    .then(res => res.text())
+    .then(text => {
+      document.getElementById("result").innerText = text;
+    })
+    .catch(() => {
+      document.getElementById("result").innerText = "Błąd połączenia";
     });
+}
 
-    status.innerText = "KAMERA DZIAŁA ✔";
+function startScanner() {
 
-    const video = document.createElement("video");
-    video.srcObject = stream;
-    video.autoplay = true;
-    document.body.appendChild(video);
+  scanner = new Html5Qrcode("reader");
 
-  } catch (err) {
-    status.innerText = "BŁĄD: " + err;
-  }
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    onScanSuccess
+  ).then(() => {
+    document.getElementById("result").innerText = "Skaner aktywny";
+  }).catch(err => {
+    document.getElementById("result").innerText = "Błąd: " + err;
+  });
 
-});
+}
 
 </script>
 
