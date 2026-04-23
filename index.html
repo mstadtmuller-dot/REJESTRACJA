@@ -1,150 +1,136 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <title>Check-in QR</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Skaner QR</title>
 
-  <!-- QR decoder -->
-  <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+  <!-- 📌 BIBLIOTEKA QR -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
     body {
       font-family: Arial;
       text-align: center;
-      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
     }
 
-    video {
-      width: 320px;
-      margin-top: 10px;
-      border-radius: 10px;
+    #reader {
+      width: 300px;
+      margin: auto;
     }
 
-    canvas {
-      display: none;
-    }
-
-    #result {
-      margin-top: 15px;
+    .box {
+      margin-top: 20px;
       font-size: 18px;
-      font-weight: bold;
     }
 
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-top: 10px;
+    .error {
+      color: red;
+    }
+
+    .ok {
+      color: green;
     }
   </style>
 </head>
 
 <body>
 
-<h2>SKANER QR CHECK-IN</h2>
+<h2>📷 Skaner QR</h2>
 
-<button onclick="startCamera()">START KAMERY</button>
+<div id="reader"></div>
 
-<video id="video" autoplay playsinline></video>
-<canvas id="canvas"></canvas>
-
-<p id="result">Czekam na skan...</p>
+<div class="box" id="status">Czekam na skan...</div>
 
 <script>
 
-////////////////////////////////////////////////////
-// 🔴 1. TU WSTAWIASZ SWÓJ LINK Z APPS SCRIPT
-////////////////////////////////////////////////////
+  // =========================
+  // 🔴 TU WPISUJESZ SWOJE DANE
+  // =========================
 
-const API_URL = "https://script.google.com/a/macros/uw.edu.pl/s/AKfycbxKIM1G4Mh1-I4cBxv6HIASYwq55MazbHq4nBTGgb5566FHEnRCSHBl36sXgvNnlQ8P/exec";
+  const API_URL = "https://script.google.com/a/macros/uw.edu.pl/s/AKfycbxKIM1G4Mh1-I4cBxv6HIASYwq55MazbHq4nBTGgb5566FHEnRCSHBl36sXgvNnlQ8P/exec"; 
+  // np. https://script.google.com/macros/s/XXXX/exec
 
-////////////////////////////////////////////////////
+  const REDIRECT_AFTER_SCAN = "https://mstadtmuller-dot.github.io/REJESTRACJA/success.html";
+  // np. "https://twojastrona.pl/success.html"
+  // albo zostaw null
 
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+  // =========================
 
-let scanning = false;
 
-async function startCamera() {
+  function onScanSuccess(decodedText, decodedResult) {
+    console.log("QR:", decodedText);
 
-  try {
+    document.getElementById("status").innerHTML =
+      "✅ Zeskanowano: " + decodedText;
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" }
-    });
-
-    video.srcObject = stream;
-
-    scanning = true;
-
-    scanLoop();
-
-    document.getElementById("result").innerText = "Kamera aktywna...";
-
-  } catch (err) {
-
-    document.getElementById("result").innerText =
-      "Błąd kamery: " + err.message;
-
-  }
-}
-
-function scanLoop() {
-
-  if (!scanning) return;
-
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageData = ctx.getImageData(
-      0, 0,
-      canvas.width,
-      canvas.height
-    );
-
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-    if (code) {
-
-      scanning = false;
-
-      sendToServer(code.data);
-
+    // jeśli NIE masz backendu → tylko pokazuj wynik
+    if (!API_URL || API_URL.includes("TUTAJ")) {
       return;
     }
-  }
 
-  requestAnimationFrame(scanLoop);
-}
-
-function sendToServer(qrText) {
-
-  document.getElementById("result").innerText = "Sprawdzanie...";
-
-  fetch(API_URL + "?id=" + encodeURIComponent(qrText))
+    // wysyłka do API (Google Script / backend)
+    fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        qr: decodedText
+      })
+    })
     .then(res => res.text())
     .then(data => {
+      document.getElementById("status").innerHTML =
+        "📡 Wysłano do serwera: " + data;
 
-      document.getElementById("result").innerText = data;
-
-      // opcjonalnie restart skanowania po 2s
-      setTimeout(() => {
-        scanning = true;
-        scanLoop();
-      }, 2000);
-
+      if (REDIRECT_AFTER_SCAN) {
+        window.location.href = REDIRECT_AFTER_SCAN;
+      }
     })
     .catch(err => {
-
-      document.getElementById("result").innerText =
-        "Błąd połączenia: " + err.message;
-
+      document.getElementById("status").innerHTML =
+        "❌ Błąd połączenia z API";
+      console.error(err);
     });
-}
+  }
+
+
+  function onScanFailure(error) {
+    // ignorujemy błędy skanowania (normalne)
+  }
+
+
+  // start kamery
+  const html5QrCode = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+
+    if (devices && devices.length) {
+
+      const cameraId = devices[0].id;
+
+      html5QrCode.start(
+        cameraId,
+        {
+          fps: 10,
+          qrbox: 250
+        },
+        onScanSuccess,
+        onScanFailure
+      );
+
+    } else {
+      document.getElementById("status").innerHTML =
+        "❌ Brak kamery";
+    }
+
+  }).catch(err => {
+    document.getElementById("status").innerHTML =
+      "❌ Kamera niedostępna: " + err;
+  });
 
 </script>
 
