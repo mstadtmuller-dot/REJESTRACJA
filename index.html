@@ -1,34 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>QR CHECK-IN</title>
+  <title>Check-in QR</title>
 
+  <!-- QR decoder -->
   <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
 
   <style>
-    body { font-family: Arial; text-align: center; }
-    video { width: 300px; margin-top: 10px; }
-    canvas { display: none; }
-    #result { margin-top: 15px; font-size: 18px; font-weight: bold; }
-    button { padding: 10px 15px; margin-bottom: 10px; }
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f5f5f5;
+    }
+
+    video {
+      width: 320px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    #result {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
 <body>
 
-<h2>SKANER QR</h2>
+<h2>SKANER QR CHECK-IN</h2>
 
-<button onclick="start()">START</button>
+<button onclick="startCamera()">START KAMERY</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas"></canvas>
 
-<p id="result">Czekam...</p>
+<p id="result">Czekam na skan...</p>
 
 <script>
 
-const API_URL = "https://script.google.com/a/macros/uw.edu.pl/s/AKfycbz4tWLQbTqzZfP8KdeKOUrLLzor65yhd0HhkfW09Un7S04Xhozp0NoUEMEb_sVuSj-8/exec";
+////////////////////////////////////////////////////
+// 🔴 1. TU WSTAWIASZ SWÓJ LINK Z APPS SCRIPT
+////////////////////////////////////////////////////
+
+const API_URL = "https://script.google.com/a/macros/uw.edu.pl/s/AKfycbxKIM1G4Mh1-I4cBxv6HIASYwq55MazbHq4nBTGgb5566FHEnRCSHBl36sXgvNnlQ8P/exec";
+
+////////////////////////////////////////////////////
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
@@ -36,31 +65,31 @@ const ctx = canvas.getContext("2d");
 
 let scanning = false;
 
-async function start() {
+async function startCamera() {
 
   try {
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } }
+      video: { facingMode: "environment" }
     });
 
     video.srcObject = stream;
 
     scanning = true;
 
-    requestAnimationFrame(scan);
+    scanLoop();
 
-    document.getElementById("result").innerText = "KAMERA OK";
+    document.getElementById("result").innerText = "Kamera aktywna...";
 
-  } catch (e) {
+  } catch (err) {
 
-    document.getElementById("result").innerText = "BŁĄD: " + e.name;
+    document.getElementById("result").innerText =
+      "Błąd kamery: " + err.message;
 
   }
-
 }
 
-function scan() {
+function scanLoop() {
 
   if (!scanning) return;
 
@@ -71,38 +100,50 @@ function scan() {
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(
+      0, 0,
+      canvas.width,
+      canvas.height
+    );
 
-    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: "dontInvert"
-    });
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
 
     if (code) {
 
       scanning = false;
 
-      handleQR(code.data);
+      sendToServer(code.data);
 
       return;
     }
   }
 
-  requestAnimationFrame(scan);
+  requestAnimationFrame(scanLoop);
 }
 
-function handleQR(text) {
+function sendToServer(qrText) {
 
   document.getElementById("result").innerText = "Sprawdzanie...";
 
-  fetch(API_URL + "?id=" + encodeURIComponent(text))
+  fetch(API_URL + "?id=" + encodeURIComponent(qrText))
     .then(res => res.text())
     .then(data => {
-      document.getElementById("result").innerText = data;
-    })
-    .catch(() => {
-      document.getElementById("result").innerText = "Błąd połączenia";
-    });
 
+      document.getElementById("result").innerText = data;
+
+      // opcjonalnie restart skanowania po 2s
+      setTimeout(() => {
+        scanning = true;
+        scanLoop();
+      }, 2000);
+
+    })
+    .catch(err => {
+
+      document.getElementById("result").innerText =
+        "Błąd połączenia: " + err.message;
+
+    });
 }
 
 </script>
