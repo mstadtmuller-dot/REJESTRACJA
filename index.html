@@ -2,22 +2,66 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>DEBUG CLICK</title>
+  <title>Skaner QR FIX</title>
+
+  <!-- ZMIENIONE CDN (stabilniejsze) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
+
+  <style>
+    body { font-family: Arial; text-align: center; }
+    #reader { width: 300px; margin: auto; }
+    #result { margin-top: 15px; font-size: 18px; }
+    button { padding: 10px 15px; }
+  </style>
 </head>
 
 <body>
 
-<h2>TEST PRZYCISKU</h2>
+<h2>SKANER QR</h2>
 
-<button onclick="test()">KLIKNIJ MNIE</button>
+<button onclick="startScanner()">START</button>
 
-<p id="out">czekam...</p>
+<div id="reader"></div>
+<div id="result">Czekam...</div>
 
 <script>
 
-function test() {
-  document.getElementById("out").innerText = "JS DZIAŁA ✔";
-  alert("JS działa");
+const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
+
+function onScanSuccess(decodedText) {
+
+  document.getElementById("result").innerText = "Sprawdzanie...";
+
+  fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
+    .then(res => res.text())
+    .then(text => {
+      document.getElementById("result").innerText = text;
+    });
+
+}
+
+function startScanner() {
+
+  if (typeof Html5Qrcode === "undefined") {
+    document.getElementById("result").innerText =
+      "BŁĄD: biblioteka nie załadowana";
+    return;
+  }
+
+  const scanner = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      onScanSuccess
+    );
+
+  }).catch(err => {
+    document.getElementById("result").innerText = err;
+  });
+
 }
 
 </script>
