@@ -2,37 +2,66 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Check-in QR</title>
+  <title>Skaner QR</title>
+
   <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      margin-top: 20px;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
 </head>
 
 <body>
 
 <h2>Skaner QR</h2>
 
-<div id="reader" style="width:300px;"></div>
-<div id="result"></div>
+<div id="reader"></div>
+<div id="result">Czekam na skan...</div>
 
 <script>
 
-const API_URL = "https://script.google.com/a/macros/uw.edu.pl/s/AKfycbz4tWLQbTqzZfP8KdeKOUrLLzor65yhd0HhkfW09Un7S04Xhozp0NoUEMEb_sVuSj-8/exec";
+const API_URL = "WSTAW_TUTAJ_LINK_APPS_SCRIPT";
 
 function onScanSuccess(decodedText) {
+
+  document.getElementById("result").innerText = "Sprawdzanie...";
 
   fetch(API_URL + "?id=" + encodeURIComponent(decodedText))
     .then(res => res.text())
     .then(text => {
       document.getElementById("result").innerText = text;
+    })
+    .catch(err => {
+      document.getElementById("result").innerText = "Błąd połączenia";
     });
 }
 
-const html5QrCode = new Html5Qrcode("reader");
+function startScanner() {
+  const html5QrCode = new Html5Qrcode("reader");
 
-html5QrCode.start(
-  { facingMode: "environment" },
-  { fps: 10, qrbox: 250 },
-  onScanSuccess
-);
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    onScanSuccess
+  ).catch(err => {
+    document.getElementById("result").innerText =
+      "Nie można uruchomić kamery: " + err;
+  });
+}
+
+startScanner();
 
 </script>
 
