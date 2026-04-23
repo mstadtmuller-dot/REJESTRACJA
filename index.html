@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>QR Check-in</title>
+  <title>QR CHECK-IN</title>
 
   <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
 
@@ -41,26 +41,26 @@ async function start() {
   try {
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" }
+      video: { facingMode: { ideal: "environment" } }
     });
 
     video.srcObject = stream;
 
     scanning = true;
 
-    scanLoop();
+    requestAnimationFrame(scan);
 
     document.getElementById("result").innerText = "KAMERA OK";
 
   } catch (e) {
 
-    document.getElementById("result").innerText = "BŁĄD KAMERY: " + e.message;
+    document.getElementById("result").innerText = "BŁĄD: " + e.name;
 
   }
 
 }
 
-function scanLoop() {
+function scan() {
 
   if (!scanning) return;
 
@@ -73,7 +73,9 @@ function scanLoop() {
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: "dontInvert"
+    });
 
     if (code) {
 
@@ -85,7 +87,7 @@ function scanLoop() {
     }
   }
 
-  requestAnimationFrame(scanLoop);
+  requestAnimationFrame(scan);
 }
 
 function handleQR(text) {
